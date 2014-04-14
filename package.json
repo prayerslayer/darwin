@@ -1,0 +1,21 @@
+{
+  "name": "darwin",
+  "version": "0.0.1",
+  "description": "A small framework for evolutionary algorithms in node.js",
+  "main": "src/darwin.js",
+  "scripts": {
+    "test": "gulp test"
+  },
+  "author": "Nikolaus Piccolotto",
+  "license": "CC0",
+  "devDependencies": {
+    "gulp": "^3.6.0",
+    "gulp-jasmine": "^0.2.0",
+    "gulp-jshint": "^1.5.3",
+    "gulp-watch": "^0.5.4",
+    "jshint-stylish": "^0.1.5"
+  },
+  "dependencies": {
+    "mori": "~0.2.6"
+  }
+}
