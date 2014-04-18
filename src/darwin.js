@@ -27,16 +27,16 @@ function findMaximum( acc, next ) {
     return next > acc ? next : acc;
 }
 
-function crossover( parents, randomNumber ) {
+function crossover( parents, testRandom ) {
     var parentA = m.first( parents ),
         parentB = m.last( parents ),
-        offspringA = ( randomNumber || Math.random() ) < params.crossoverProbability ? makeBabyFn( parentA, parentB ) : parentA,
-        offspringB = ( randomNumber || Math.random() ) < params.crossoverProbability ? makeBabyFn( parentB, parentA ) : parentB;
+        offspringA = ( testRandom || Math.random() ) < params.crossoverProbability ? makeBabyFn( parentA, parentB ) : parentA,
+        offspringB = ( testRandom || Math.random() ) < params.crossoverProbability ? makeBabyFn( parentB, parentA ) : parentB;
     return m.vector( offspringA, offspringB );
 }
 
-function mutate( child, randomNumber ) {
-    if ( ( randomNumber || Math.random() ) < params.mutationProbability ) {
+function mutate( child, testRandom ) {
+    if ( ( testRandom || Math.random() ) < params.mutationProbability ) {
         return mutateFn( child );
     }
     return child;
@@ -56,6 +56,34 @@ function elitistSelection( howMany, population ) {
     return m.take( howMany, m.sort_by( fitnessFn, compareFn, population ) );
 }
 
+function binaryTournamentSelection( howMany, population, p, testChance ) {
+    if ( howMany <= 0 || p < 0 )
+        return population;
+
+    function rand(a,b) { return Math.random() < 0.5; }; //baad
+    
+    // take howMany random genomes and sort them
+    var randomized = m.sort_by( fitnessFn, compareFn, m.take( howMany, m.sort( rand, population) ) );
+    // throw a dice
+    var chance = testChance || Math.random();
+    // create collection with index
+    var randomizedWithIndex = m.reverse ( m.partition( 2, m.interleave( randomized, m.range( howMany ) ) ) );
+    // let the tournament begin
+    var tournament = m.drop_while( function( tuple ) {
+        var k = m.last( tuple ),
+            v = m.first( tuple );
+        // make sure fittest one in the tournament stays
+        if ( k === 0 ) {
+            return;
+        }
+
+        if ( p * ( Math.pow( 1-p, k ) ) < chance ) {
+            return v;
+        }
+    }, randomizedWithIndex );
+    return m.first( m.first( tournament ) );
+}
+
 function rouletteSelection( howMany, population, randomNumber ) {
     if ( howMany === 0 )
         return population;
@@ -72,6 +100,8 @@ compareFn = greaterBetter;
 
 exports.lowerBetter = lowerBetter;
 exports.greaterBetter = greaterBetter;
+exports.binaryTournament = binaryTournamentSelection;
+exports.elitist = elitistSelection;
 
 exports.fitness = function( fit ) {
     if ( !fit ) return;
@@ -180,7 +210,7 @@ exports.run = function( config ) {
         // calculate how many children we need
         births = m.count( population ) * config.generationGap;
         // select 10 % of population to have children
-        chosenOnes = selectFn( howMany, population );
+        chosenOnes = selectFn( births, population, .5 );
         log( 'Pairing...', chosenOnes );
         // make babies
         parents = m.partition( 2, chosenOnes );                                  // group them in 2

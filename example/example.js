@@ -10,6 +10,7 @@ darwin.fitness( function( genome ) {
     return Math.abs( 50 - genome );
 });
 
+darwin.select( darwin.binaryTournament );
 darwin.compare( darwin.lowerBetter );
 
 darwin.offspring( function( a, b, r ) {

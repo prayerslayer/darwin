@@ -1,11 +1,6 @@
 describe( 'The Darwin algorithm', function() {
     var darwin,
-        _ = require( 'mori' ),
-        parameters = {
-            'population': 10,
-            'generations': 10,
-            'generationGap': 0.5
-        };
+        _ = require( 'mori' );
 
     beforeEach( function() {
         delete require.cache[ require.resolve( '../src/darwin' ) ];
@@ -16,42 +11,30 @@ describe( 'The Darwin algorithm', function() {
         darwin = null;
     });
 
-    // it( 'should select the correct amount of genomes in every generation', function() {
-    //     var select = jasmine.createSpy( 'select' );
+    it( 'should binary-tournament-select correctly', function() {
+        var genomes = [ 4, 0, 3, 2 ],    // 0, 2, 3, 4
+            select = darwin.binaryTournament;
 
-    //     darwin.seed( _.identity );
-    //     darwin.fitness( _.identity );
-    //     darwin.offspring( _.identity );
-    //     darwin.select( select );
-    //     darwin.run( parameters );
-
-    //     expect( select ).toHaveBeenCalled();
-    //     expect( select.calls.length ).toEqual( parameters.generations * ( parameters.population * parameters.generationGap ) );
-    // });
-
-    it( 'should create the correct amount of seeds', function() {
-        var seed = jasmine.createSpy( 'seed' );
-
-        darwin.seed( seed );
         darwin.fitness( _.identity );
-        darwin.offspring( _.identity );
-        darwin.run( parameters );
 
-        expect( seed ).toHaveBeenCalled();
-        expect( seed.calls.length ).toEqual( parameters.population );
-        
+        var selection = select( 4, genomes, 0.5, 0.00004 );
+        expect( _.count( selection ) ).toBe( 1 );
+        expect( _.nth( selection, 0 ) ).toBe( 0 );
+
+        selection = select( 4, genomes, 0.5, 0.2 );
+        expect( _.nth( selection, 0 ) ).toBe( 3 );
     });
 
     it( 'should elitist-select correctly', function() {
         var genomes = [ 4, 0, 3, 2 ],    // 1, 2, 3, 4
-            select = darwin.select();
+            select = darwin.elitist;
 
         darwin.fitness( _.identity );
 
-        var selectOne = select( 1 )( genomes ),
-            selectTwo =  select( 2 )( genomes ),
-            selectThree= select( 3 )( genomes ),
-            selectFour = select( 4 )( genomes );
+        var selectOne = select( 1, genomes ),
+            selectTwo =  select( 2, genomes ),
+            selectThree= select( 3, genomes ),
+            selectFour = select( 4, genomes );
 
         expect( _.first( selectOne ) ).toBe( 4 );
 
@@ -74,15 +57,15 @@ describe( 'The Darwin algorithm', function() {
 
     it( 'should elitist-select correctly with lowerBetter fitness', function() {
         var genomes = [ 4, 0, 3, 2 ],    // 1, 2, 3, 4
-            select = darwin.select();
+            select = darwin.elitist;
 
         darwin.fitness( _.identity );
         darwin.compare( darwin.lowerBetter );
 
-        var selectOne = select( 1 )( genomes ),
-            selectTwo =  select( 2 )( genomes ),
-            selectThree= select( 3 )( genomes ),
-            selectFour = select( 4 )( genomes );
+        var selectOne = select( 1, genomes ),
+            selectTwo =  select( 2, genomes ),
+            selectThree= select( 3, genomes ),
+            selectFour = select( 4, genomes );
 
         expect( _.first( selectOne ) ).toBe( 0 );
 
