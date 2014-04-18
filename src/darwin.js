@@ -5,7 +5,6 @@ var params,
     initialSeeds,
     mutateFn,
     makeBabyFn,
-    compareFn,
     fitnessFn,
     selectFn;
 
@@ -45,11 +44,6 @@ function mutate( child ) {
     }
     return child;
 }
-
-// default compare function
-compareFn = function compare( fitnessA, fitnessB ) {
-    return fitnessA - fitnessB;
-};
 
 // default select function
 selectFn = function select( genomes ) {
@@ -180,11 +174,11 @@ exports.run = function( config ) {
         if ( config.killWeak ) {
             log( 'KILLING SPREEE' );
             // kill worst 10 % of population
-            population = m.take( config.population, m.reverse( m.sort_by( fitnessFn, compareFn, population ) ) );
+            population = m.take( config.population, m.reverse( m.sort_by( fitnessFn, population ) ) );
         }
     });
 
     var end = Date.now();
     log( 'Simulation ran for', end - start, 'ms.' );
-    return m.first( m.sort_by( fitnessFn, compareFn, population ) );
+    return m.first( m.sort_by( fitnessFn, population ) );
 };
