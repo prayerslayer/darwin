@@ -38,6 +38,13 @@ function crossover( parents ) {
     return m.vector( offspringA, offspringB );
 }
 
+function mutate( child ) {
+    if ( Math.random() < params.mutationProbability ) {
+        return mutateFn( child );
+    }
+    return child;
+}
+
 // default select function
 selectFn = function select( genomes ) {
     // normalize based on fitness, sort, take random number, first >= random number wins
@@ -156,7 +163,7 @@ exports.run = function( config ) {
         parents = m.partition( 2, chosenOnes );                                  // group them in 2
         log( 'Reproducing...' );
         offsprings = m.map( crossover, parents );                                // make 2 babies
-        offsprings = m.map( mutateFn, offsprings );                              // mutate babies
+        offsprings = m.map( mutate, offsprings );                              // mutate babies
         population = m.into( population, m.mapcat( m.identity, offsprings ) );   // unfold babies in population
         if ( config.killWeak ) {
             log( 'KILLING SPREEE' );
