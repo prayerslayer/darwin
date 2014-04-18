@@ -14,12 +14,6 @@ function log() {
     }
 }
 
-function defaults( value, def ) {
-    if ( typeof value !== 'undefined' )
-        return value;
-    value = def;
-}
-
 function normalize( max ) {
     return function( value ) {
         return value / max;
@@ -116,14 +110,15 @@ exports.run = function( config ) {
             'generationGap': 0.1 // replace 10% of population in every generation
         };
     } else {
-        defaults( config.crossoverProbability, 0.3 );
-        defaults( config.mutationProbability, 0.001 );
-        defaults( config.population, 100 );
-        defaults( config.generations, 10 );
-        defaults( config.killWeak, true );
-        defaults( config.outputLog, false );
-        defaults( config.generationGap, 0.1 );
+        config.crossoverProbability = config.crossoverProbability || 0.3;
+        config.mutationProbability = config.mutationProbability || 0.001;
+        config.population = config.population || 100;
+        config.generations = config.generations || 10;
+        config.killWeak = config.killWeak || true;
+        config.outputLog = config.outputLog || false;
+        config.generationGap = config.generationGap || 0.1;
     }
+    var population;
     params = config;
 
     // seed initial population
@@ -172,5 +167,5 @@ exports.run = function( config ) {
 
     var end = Date.now();
     log( 'Simulation ran for', end - start, 'ms.' );
-    return m.first( population );
+    return m.first( m.sort_by( fitnessFn, population ) );
 };

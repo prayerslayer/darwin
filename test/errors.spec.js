@@ -9,23 +9,19 @@ describe( 'Darwin', function() {
         darwin = require( '../src/darwin' );
     });
 
-    afterEach( function() {
-        darwin = null;
-    });
-
     it( 'should not run without fitness function', function() {
-        expect( darwin.run ).toThrow( new Error( 'You must specify a fitness function.') );
+        expect( darwin.run ).toThrow();
     });
 
     it( 'should not run without offspring function', function() {
         darwin.fitness( fakeFn );
-        expect( darwin.run ).toThrow( new Error( 'You must specify an offspring function.' ) );
+        expect( darwin.run ).toThrow();
     });
 
     it( 'should not run without seeds', function() {
         darwin.fitness( fakeFn );
         darwin.offspring( fakeFn );
-        expect( darwin.run ).toThrow( new Error( 'You must specify seeds or a function to create one.' ) );
+        expect( darwin.run ).toThrow();
     });
 
     it( 'should not accept non-functions', function() {
