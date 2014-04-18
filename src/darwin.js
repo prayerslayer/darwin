@@ -48,7 +48,7 @@ function mutate( child ) {
 
 // default compare function
 compareFn = function compare( fitnessA, fitnessB ) {
-    return fitnessB - fitnessA;
+    return fitnessA - fitnessB;
 };
 
 // default select function
