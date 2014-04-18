@@ -19,6 +19,10 @@ describe( 'The Darwin API', function() {
         expect( darwin.seed ).toBeDefined();
     });
 
+    it( 'should have a compare function', function() {
+        expect( darwin.compare ).toBeDefined();
+    });
+
     it( 'should have a run function', function() {
         expect( darwin.run ).toBeDefined();
     });

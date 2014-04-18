@@ -5,6 +5,7 @@ var params,
     initialSeeds,
     mutateFn,
     makeBabyFn,
+    compareFn,
     fitnessFn,
     selectFn;
 
@@ -45,6 +46,11 @@ function mutate( child ) {
     return child;
 }
 
+// default compare function
+compareFn = function compare( fitnessA, fitnessB ) {
+    return fitnessB - fitnessA;
+};
+
 // default select function
 selectFn = function select( genomes ) {
     // normalize based on fitness, sort, take random number, first >= random number wins
@@ -73,6 +79,12 @@ exports.select = function( userSelect ) {
     if ( typeof userSelect !== 'function' ) return;
     selectFn = userSelect;
 };
+
+exports.compare = function( userCompare ) {
+    if ( !userCompare ) return;
+    if ( typeof userCompare !== 'function' ) return;
+    compareFn = userCompare;
+}
 
 exports.offspring = function( userOffspring ) {
     if ( !userOffspring ) return;
@@ -168,11 +180,11 @@ exports.run = function( config ) {
         if ( config.killWeak ) {
             log( 'KILLING SPREEE' );
             // kill worst 10 % of population
-            population = m.take( config.population, m.reverse( m.sort_by( fitnessFn, population ) ) );
+            population = m.take( config.population, m.reverse( m.sort_by( fitnessFn, compareFn, population ) ) );
         }
     });
 
     var end = Date.now();
     log( 'Simulation ran for', end - start, 'ms.' );
-    return m.first( m.sort_by( fitnessFn, population ) );
+    return m.first( m.sort_by( fitnessFn, compareFn, population ) );
 };
