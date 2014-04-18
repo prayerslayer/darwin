@@ -5,6 +5,7 @@ var params,
     initialSeeds,
     mutateFn,
     makeBabyFn,
+    compareFn,
     fitnessFn,
     selectFn;
 
@@ -14,53 +15,63 @@ function log() {
     }
 }
 
-function normalize( max ) {
-    return function( value ) {
-        return value / max;
-    };
+function normalize( max, value ) {
+    return value / max;
 }
 
 function smallerThan( val ) {
-    return function( a ) {
-        return a < val;
-    };
+    return a < val;
 }
 
 function findMaximum( acc, next ) {
     return next > acc ? next : acc;
 }
 
-function crossover( parents ) {
+function crossover( parents, randomNumber ) {
     var parentA = m.first( parents ),
         parentB = m.last( parents ),
-        offspringA = Math.random() < params.crossoverProbability ? makeBabyFn( parentA, parentB ) : parentA,
-        offspringB = Math.random() < params.crossoverProbability ? makeBabyFn( parentB, parentA ) : parentB;
+        offspringA = ( randomNumber || Math.random() ) < params.crossoverProbability ? makeBabyFn( parentA, parentB ) : parentA,
+        offspringB = ( randomNumber || Math.random() ) < params.crossoverProbability ? makeBabyFn( parentB, parentA ) : parentB;
     return m.vector( offspringA, offspringB );
 }
 
-function mutate( child ) {
-    if ( Math.random() < params.mutationProbability ) {
+function mutate( child, randomNumber ) {
+    if ( ( randomNumber || Math.random() ) < params.mutationProbability ) {
         return mutateFn( child );
     }
     return child;
 }
 
+function greaterBetter( a, b ) {
+    return b - a;
+}
+
+function lowerBetter( a, b ) {
+    return a - b;
+}
+
+function elitistSelection( howMany, population ) {
+    if ( howMany <= 0 )
+        return population;
+    return m.take( howMany, m.sort_by( fitnessFn, compareFn, population ) );
+}
+
+function rouletteSelection( howMany, population, randomNumber ) {
+    if ( howMany === 0 )
+        return population;
+
+    //TODO
+}
+
 // default select function
-selectFn = function select( genomes ) {
-    // normalize based on fitness, sort, take random number, first >= random number wins
-    var fitties = m.map( fitnessFn, genomes ),
-        max = m.reduce( findMaximum, 0, fitties ),
-        unit = normalize( max ),
-        kill = smallerThan( Math.random() ),
-        chosens = m.drop_while( m.comp( kill, unit, fitnessFn ), genomes ),
-        neo = m.first( chosens );
-
-    return neo;
-};
-
+selectFn = elitistSelection;
 // mutate defaults to identity function
 // i.e. there is no mutation
 mutateFn = m.identity;
+compareFn = greaterBetter;
+
+exports.lowerBetter = lowerBetter;
+exports.greaterBetter = greaterBetter;
 
 exports.fitness = function( fit ) {
     if ( !fit ) return;
@@ -68,7 +79,15 @@ exports.fitness = function( fit ) {
     fitnessFn = fit;
 };
 
+exports.compare = function( comparator ) {
+    if ( !comparator ) return;
+    if ( typeof comparator !== 'function' ) return;
+
+    compareFn = comparator;
+};
+
 exports.select = function( userSelect ) {
+    if ( arguments.length === 0 ) return selectFn;
     if ( !userSelect ) return;
     if ( typeof userSelect !== 'function' ) return;
     selectFn = userSelect;
@@ -78,7 +97,7 @@ exports.compare = function( userCompare ) {
     if ( !userCompare ) return;
     if ( typeof userCompare !== 'function' ) return;
     compareFn = userCompare;
-}
+};
 
 exports.offspring = function( userOffspring ) {
     if ( !userOffspring ) return;
@@ -123,7 +142,7 @@ exports.run = function( config ) {
             'generationGap': 0.1 // replace 10% of population in every generation
         };
     } else {
-        config.crossoverProbability = config.crossoverProbability || 0.3;
+        config.crossoverProbability = config.crossoverProbability || 0.5;
         config.mutationProbability = config.mutationProbability || 0.001;
         config.population = config.population || 100;
         config.generations = config.generations || 10;
@@ -147,6 +166,8 @@ exports.run = function( config ) {
         population = initialSeeds;
     }
 
+    log( 'Initial population', population );
+
     // run algo
     var start = Date.now(),
         births,
@@ -159,26 +180,24 @@ exports.run = function( config ) {
         // calculate how many children we need
         births = m.count( population ) * config.generationGap;
         // select 10 % of population to have children
-        m.empty( chosenOnes );
-        m.each( m.range( births ), function() {
-            log( 'Selecting...' );
-            chosenOnes = m.conj( chosenOnes, selectFn( population ) );
-        });
-        log( 'Pairing...' );
+        chosenOnes = selectFn( howMany, population );
+        log( 'Pairing...', chosenOnes );
         // make babies
         parents = m.partition( 2, chosenOnes );                                  // group them in 2
         log( 'Reproducing...' );
         offsprings = m.map( crossover, parents );                                // make 2 babies
         offsprings = m.map( mutate, offsprings );                              // mutate babies
+        log( 'New children', offsprings );
         population = m.into( population, m.mapcat( m.identity, offsprings ) );   // unfold babies in population
         if ( config.killWeak ) {
-            log( 'KILLING SPREEE' );
+            log( 'KILLING SPREEE' );            
             // kill worst 10 % of population
-            population = m.take( config.population, m.reverse( m.sort_by( fitnessFn, population ) ) );
+            population = m.take( config.population, ( m.sort_by( fitnessFn, compareFn, population ) ) );
+            log('new population', population );
         }
     });
 
     var end = Date.now();
     log( 'Simulation ran for', end - start, 'ms.' );
-    return m.first( m.sort_by( fitnessFn, population ) );
+    return m.sort_by( fitnessFn, compareFn, population );
 };
